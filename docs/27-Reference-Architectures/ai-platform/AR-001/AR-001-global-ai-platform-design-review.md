@@ -687,7 +687,8 @@ This architecture provides:
 It represents a production-ready enterprise architecture suitable for large organizations adopting AI at scale.
 
 ---
-flowchart TD
+```mermaid
+flowchart TB
 
     %% ==========================
     %% Users
@@ -838,9 +839,12 @@ flowchart TD
     GitHub --> Terraform
 
     AR --> GKE
+```
 
 
 ---
+
+```mermaid
 
 flowchart LR
 
@@ -893,6 +897,7 @@ APSQL["Regional DB"]
 APStorage["Cloud Storage"]
 
 end
+```
 
 ---
 Request Flow
