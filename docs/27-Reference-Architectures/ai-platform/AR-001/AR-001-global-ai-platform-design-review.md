@@ -408,6 +408,191 @@ GKE --> PGA
 | Cloud CDN | Global edge caching |
 | Regional Databases | Data residency and fault isolation |
 
+
+## Decision: Introduce an AI Platform Gateway
+
+### Problem
+
+A straightforward implementation would allow application services to invoke Vertex AI directly.
+
+```text
+Cloud Run / GKE
+        │
+        ▼
+    Vertex AI
+```
+
+While this works for small applications, it becomes difficult to operate at enterprise scale.
+
+As the number of applications, business units, AI models, and compliance requirements grows, direct integration creates duplicated logic, inconsistent security controls, and reduced operational visibility.
+
+---
+
+## Decision
+
+Introduce an **AI Gateway** as the single entry point for all AI requests.
+
+```text
+Applications
+      │
+      ▼
++------------------------+
+|       AI Gateway       |
+|------------------------|
+| Authentication         |
+| Authorization          |
+| Prompt Validation      |
+| Rate Limiting          |
+| Model Routing          |
+| Cost Controls          |
+| Audit Logging          |
+| Observability          |
+| Response Caching       |
++------------------------+
+      │
+      ▼
+Private Service Connect
+      │
+      ▼
+Vertex AI
+```
+
+---
+
+## Why an AI Platform Gateway?
+
+### 1. Centralized Authentication & Authorization
+
+Instead of every application implementing its own security model, the gateway enforces a consistent authentication and authorization policy.
+
+Benefits:
+
+- IAM integration
+- Service account validation
+- Fine-grained access control
+- Business-unit isolation
+
+---
+
+### 2. Model Abstraction
+
+Applications should not know which LLM they are calling.
+
+Today:
+
+- Gemini 2.5
+
+Tomorrow:
+
+- Gemini 3.x
+- Open models
+- Third-party models
+- On-premises models
+
+The gateway hides provider-specific APIs from application teams.
+
+---
+
+### 3. Prompt Guardrails
+
+Every AI request can be validated before reaching the model.
+
+Examples:
+
+- Prompt injection detection
+- Sensitive information detection
+- PII masking
+- Prompt size validation
+- Content policy enforcement
+
+This reduces security and compliance risks.
+
+---
+
+### 4. Cost Optimization
+
+The gateway becomes the control point for AI spending.
+
+Examples:
+
+- Token quotas
+- Budget enforcement
+- Request throttling
+- Model selection based on cost
+- Caching repeated prompts
+
+Without a gateway, every application would implement these controls differently—or not at all.
+
+---
+
+### 5. Observability
+
+The gateway provides a single place to capture:
+
+- Request latency
+- Token usage
+- Prompt volume
+- Error rates
+- Cost per business unit
+- Model utilization
+- User activity
+
+This enables enterprise-wide monitoring and chargeback.
+
+---
+
+### 6. Future Flexibility
+
+The organization can change AI providers without requiring every application to be rewritten.
+
+Applications continue calling the gateway while the gateway manages integrations with different model providers.
+
+This reduces vendor lock-in and simplifies platform evolution.
+
+---
+
+## Trade-offs
+
+| Benefit | Trade-off |
+|----------|-----------|
+| Centralized governance | Additional component to operate |
+| Consistent security | Slight increase in latency |
+| Improved observability | Gateway must be highly available |
+| Vendor abstraction | Additional implementation effort |
+| Cost optimization | More platform engineering work |
+
+---
+
+## Production Responsibilities of the AI Gateway
+
+The AI Gateway should provide:
+
+- Authentication
+- Authorization
+- Prompt validation
+- Rate limiting
+- Request routing
+- Model selection
+- Token accounting
+- Cost tracking
+- Request logging
+- Response caching (where appropriate)
+- Audit logging
+- Policy enforcement
+- Retry and circuit breaker logic
+- API versioning
+
+---
+
+## Architect's Note
+
+The AI Gateway is **not** introduced because Vertex AI lacks functionality.
+
+It is introduced because enterprise platforms require a centralized control layer for governance, security, observability, and lifecycle management.
+
+As organizations adopt multiple AI models and support many application teams, the gateway becomes a strategic platform component rather than an optional optimization.
+
+
 ---
 
 # Production Checklist
@@ -500,6 +685,283 @@ This architecture provides:
 - Independent regional scalability
 
 It represents a production-ready enterprise architecture suitable for large organizations adopting AI at scale.
+
+---
+flowchart TD
+
+    %% ==========================
+    %% Users
+    %% ==========================
+
+    Users["🌍 Global Employees / Partners"]
+
+    Users --> DNS
+
+    %% ==========================
+    %% Edge
+    %% ==========================
+
+    DNS["Cloud DNS"]
+
+    LB["Global External HTTPS Load Balancer"]
+
+    Armor["Cloud Armor (WAF + DDoS)"]
+
+    CDN["Cloud CDN"]
+
+    DNS --> LB
+
+    LB --> Armor
+
+    Armor --> CDN
+
+    %% ==========================
+    %% API Layer
+    %% ==========================
+
+    CDN --> CR
+
+    CR["Cloud Run API Layer"]
+
+    %% ==========================
+    %% Shared VPC
+    %% ==========================
+
+    subgraph SharedVPC["Shared VPC (Host Project)"]
+
+        subgraph GKE["Private GKE Cluster"]
+
+            Gateway["AI Platform Gateway"]
+
+            API["Internal AI APIs"]
+
+            Workers["Background Workers"]
+
+        end
+
+    end
+
+    CR --> Gateway
+
+    Gateway --> API
+
+    Gateway --> Workers
+
+    %% ==========================
+    %% Vertex AI
+    %% ==========================
+
+    PSC["Private Service Connect"]
+
+    Vertex["Vertex AI"]
+
+    Gateway --> PSC
+
+    PSC --> Vertex
+
+    %% ==========================
+    %% Databases
+    %% ==========================
+
+    SQL["Regional Database"]
+
+    Redis["Memorystore"]
+
+    GCS["Cloud Storage"]
+
+    API --> SQL
+
+    API --> Redis
+
+    API --> GCS
+
+    Workers --> SQL
+
+    Workers --> GCS
+
+    %% ==========================
+    %% Security
+    %% ==========================
+
+    Secrets["Secret Manager"]
+
+    KMS["Cloud KMS (CMEK)"]
+
+    IAM["IAM + Workload Identity"]
+
+    Gateway --> Secrets
+
+    Secrets --> KMS
+
+    Gateway --> IAM
+
+    %% ==========================
+    %% Networking
+    %% ==========================
+
+    PGA["Private Google Access"]
+
+    NAT["Cloud NAT"]
+
+    Gateway --> PGA
+
+    Gateway --> NAT
+
+    %% ==========================
+    %% Observability
+    %% ==========================
+
+    Logging["Cloud Logging"]
+
+    Monitoring["Cloud Monitoring"]
+
+    Trace["Cloud Trace"]
+
+    Gateway --> Logging
+
+    Gateway --> Monitoring
+
+    Gateway --> Trace
+
+    %% ==========================
+    %% CI/CD
+    %% ==========================
+
+    GitHub["GitHub Actions"]
+
+    AR["Artifact Registry"]
+
+    Terraform["Terraform"]
+
+    GitHub --> AR
+
+    GitHub --> Terraform
+
+    AR --> GKE
+
+
+---
+
+flowchart LR
+
+Global["Global Control Plane"]
+
+Global --> EU
+
+Global --> US
+
+Global --> APAC
+
+subgraph EU["EU Region"]
+
+EULB["Regional Services"]
+
+EUGKE["Private GKE"]
+
+EUVertex["Vertex AI"]
+
+EUSQL["Regional DB"]
+
+EUStorage["Cloud Storage"]
+
+end
+
+subgraph US["US Region"]
+
+USLB["Regional Services"]
+
+USGKE["Private GKE"]
+
+USVertex["Vertex AI"]
+
+USSQL["Regional DB"]
+
+USStorage["Cloud Storage"]
+
+end
+
+subgraph APAC["APAC Region"]
+
+APLB["Regional Services"]
+
+APGKE["Private GKE"]
+
+APVertex["Vertex AI"]
+
+APSQL["Regional DB"]
+
+APStorage["Cloud Storage"]
+
+end
+
+---
+Request Flow
+
+User
+
+↓
+
+Cloud DNS
+
+↓
+
+Global HTTPS Load Balancer
+
+↓
+
+Cloud Armor
+
+↓
+
+Cloud CDN
+
+↓
+
+Cloud Run
+
+↓
+
+AI Platform Gateway
+
+↓
+
+Authentication
+
+↓
+
+Authorization
+
+↓
+
+Prompt Guardrails
+
+↓
+
+Model Routing
+
+↓
+
+Private Service Connect
+
+↓
+
+Vertex AI
+
+↓
+
+Regional Database
+
+↓
+
+Cloud Storage
+
+↓
+
+Response
+
+↓
+
+User
 
 
 
