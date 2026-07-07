@@ -1,0 +1,447 @@
+# Google Cloud Enterprise Architecture Cheat Sheet (2026)
+
+> **Think Architecture → Then Google Cloud Services**
+
+---
+
+# 1. Architecture Decision Flow
+
+```
+Business Objectives
+        ↓
+Functional Requirements
+        ↓
+Non-Functional Requirements
+        ↓
+Constraints
+        ↓
+Compliance
+        ↓
+Risks
+        ↓
+Architecture Pattern
+        ↓
+Managed Google Cloud Services
+        ↓
+Production Architecture
+```
+
+**Never start with services.**
+
+---
+
+# 2. Enterprise Architecture Checklist
+
+## Business
+
+* Business goals
+* Functional requirements
+* NFRs
+* SLA / SLO
+* Budget
+* Timeline
+* Compliance
+* Business risks
+
+---
+
+## Governance
+
+* Organization
+* Folder hierarchy
+* Projects
+* Shared Services
+* Labels
+* Tags
+* Budgets
+* Organization Policies
+* Policy as Code
+
+---
+
+## Identity
+
+* IAM
+* Least Privilege
+* Groups
+* IAM Conditions
+* Workforce Identity Federation
+* Workload Identity Federation
+* Workload Identity
+* No Service Account Keys
+
+---
+
+## Networking
+
+* Shared VPC
+* Cloud DNS
+* Global HTTPS Load Balancer
+* Cloud Armor
+* Cloud CDN
+* Cloud NAT
+* Private Google Access
+* Private Service Connect
+* Cloud Router
+* VPN
+* Partner Interconnect
+* Dedicated Interconnect
+
+---
+
+## Security
+
+* IAM
+* Secret Manager
+* Cloud KMS
+* CMEK
+* Binary Authorization
+* VPC Service Controls
+* Security Command Center
+* Cloud Audit Logs
+* Zero Trust
+
+---
+
+## Compute
+
+Decision order:
+
+```
+Cloud Run
+     ↓
+GKE
+     ↓
+Managed Instance Groups
+     ↓
+Compute Engine
+```
+
+---
+
+## Databases
+
+| Requirement                 | Service     |
+| --------------------------- | ----------- |
+| PostgreSQL                  | Cloud SQL   |
+| PostgreSQL High Performance | AlloyDB     |
+| Global SQL                  | Spanner     |
+| Analytics                   | BigQuery    |
+| JSON                        | Firestore   |
+| IoT / Time-Series           | Bigtable    |
+| Cache                       | Memorystore |
+
+---
+
+## Storage
+
+* Cloud Storage
+* Lifecycle Management
+* Versioning
+* Retention
+* Storage Transfer
+
+---
+
+## Observability
+
+* Cloud Logging
+* Cloud Monitoring
+* Cloud Trace
+* Error Reporting
+* Dashboards
+* Alerts
+* SLO
+* SLA
+* SLI
+
+---
+
+## Reliability
+
+* Multi-Zone
+* Multi-Region
+* Autoscaling
+* Health Checks
+* Blue/Green
+* Canary
+* RPO
+* RTO
+* Backup
+* DR
+
+---
+
+## Platform Engineering
+
+* GitHub Actions
+* Terraform
+* Cloud Build
+* Cloud Deploy
+* Artifact Registry
+* Golden Paths
+* Shared Modules
+* Infrastructure as Code
+
+---
+
+## Cost Optimization
+
+* Budgets
+* Labels
+* Rightsizing
+* Spot VMs
+* Committed Use Discounts
+* Lifecycle Policies
+* AI Cost Monitoring
+
+---
+
+# 3. Service Decision Matrix
+
+| Requirement                  | Choose                              |
+| ---------------------------- | ----------------------------------- |
+| Central Networking           | Shared VPC                          |
+| Connect Two Networks         | VPC Peering                         |
+| Expose One Internal Service  | Private Service Connect             |
+| Google APIs from Private VM  | Private Google Access               |
+| Internet from Private VM     | Cloud NAT                           |
+| Google APIs + Internet       | Cloud NAT + Private Google Access   |
+| Global Users                 | Global External HTTPS Load Balancer |
+| WAF / DDoS                   | Cloud Armor                         |
+| Edge Cache                   | Cloud CDN                           |
+| Stateless HTTP API           | Cloud Run                           |
+| Kubernetes Platform          | GKE                                 |
+| GPU / AI Workloads           | GKE                                 |
+| PostgreSQL                   | Cloud SQL                           |
+| PostgreSQL High Performance  | AlloyDB                             |
+| Global SQL                   | Spanner                             |
+| Analytics                    | BigQuery                            |
+| IoT                          | Bigtable                            |
+| Documents                    | Firestore                           |
+| Cache                        | Memorystore                         |
+| Secrets                      | Secret Manager                      |
+| Encryption Keys              | Cloud KMS (CMEK)                    |
+| Data Exfiltration Protection | VPC Service Controls                |
+| Signed Containers            | Binary Authorization                |
+| Migration Assessment         | Migration Center                    |
+
+---
+
+# 4. AI Platform Blueprint
+
+```
+Users
+   ↓
+Cloud Run API
+   ↓
+AI Platform Gateway
+   ↓
+Authentication
+Authorization
+Prompt Guardrails
+PII Detection
+Prompt Injection Detection
+Rate Limiting
+Model Router
+Response Cache
+Token Counter
+Cost Analyzer
+AI Observability
+Policy Engine
+Audit Logs
+Feedback & Evaluation
+   ↓
+Private Service Connect
+   ↓
+Vertex AI
+   ↓
+Gemini / Model Garden
+```
+
+---
+
+# 5. AI SRE Checklist
+
+Infrastructure
+
+* Availability
+* Latency
+* Error Rate
+* CPU
+* Memory
+* GPU Utilization
+
+AI
+
+* Token Usage
+* Tokens/sec
+* Prompt Latency
+* Model Latency
+* Cost per Request
+* Cost per Tenant
+* Hallucination Rate
+* Groundedness Score
+* Safety Score
+* Prompt Injection Detection
+* Cache Hit Ratio
+* AI Error Budget
+* Model Quality Regression
+
+---
+
+# 6. Enterprise Security Checklist
+
+Identity
+
+* Least Privilege
+* IAM Groups
+* Workload Identity
+* Federation
+
+Secrets
+
+* Secret Manager
+
+Encryption
+
+* CMEK
+* Cloud KMS
+
+Runtime
+
+* Binary Authorization
+
+Network
+
+* Shared VPC
+* Private Google Access
+* Private Service Connect
+* VPC Service Controls
+
+Edge
+
+* Cloud Armor
+* Cloud CDN
+
+Audit
+
+* Cloud Audit Logs
+* Security Command Center
+
+---
+
+# 7. Migration Strategy
+
+```
+Assessment
+        ↓
+Migration Center
+        ↓
+Dependency Discovery
+        ↓
+Landing Zone
+        ↓
+Identity
+        ↓
+Networking
+        ↓
+Pilot
+        ↓
+Migration Waves
+        ↓
+Validation
+        ↓
+Optimization
+```
+
+---
+
+# 8. Production Architecture
+
+```
+Users
+   ↓
+Cloud DNS
+   ↓
+Global HTTPS Load Balancer
+   ↓
+Cloud Armor
+   ↓
+Cloud CDN
+   ↓
+Cloud Run
+   ↓
+Private GKE
+   ↓
+AI Platform Gateway
+   ↓
+Private Service Connect
+   ↓
+Vertex AI
+   ↓
+Regional Database
+   ↓
+Cloud Storage
+
+Shared Services:
+Secret Manager
+Cloud KMS
+Cloud Logging
+Cloud Monitoring
+Cloud Trace
+Artifact Registry
+Terraform
+Cloud Build / Cloud Deploy
+Security Command Center
+```
+
+---
+
+# 9. PCA Memory Triggers
+
+| Requirement            | Immediate Answer             |
+| ---------------------- | ---------------------------- |
+| 300 Projects           | Shared VPC                   |
+| One Internal API       | Private Service Connect      |
+| Google APIs            | Private Google Access        |
+| Internet               | Cloud NAT                    |
+| PostgreSQL Performance | AlloyDB                      |
+| Global SQL             | Spanner                      |
+| Analytics              | BigQuery                     |
+| Time-Series            | Bigtable                     |
+| Stateless API          | Cloud Run                    |
+| Kubernetes             | GKE                          |
+| WAF                    | Cloud Armor                  |
+| Data Exfiltration      | VPC Service Controls         |
+| No SA Keys             | Workload Identity Federation |
+| Approved Images        | Binary Authorization         |
+| Migration First        | Migration Center             |
+
+---
+
+# 10. Principal Architect Final Review
+
+✓ Business aligned
+
+✓ Managed service first
+
+✓ Secure by default
+
+✓ Least privilege
+
+✓ Private networking
+
+✓ Multi-zone / Multi-region
+
+✓ Observability built in
+
+✓ Infrastructure as Code
+
+✓ Automated deployment
+
+✓ Cost optimized
+
+✓ AI governance enabled
+
+✓ Production ready
